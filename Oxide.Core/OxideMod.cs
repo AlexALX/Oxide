@@ -35,6 +35,7 @@ namespace Oxide.Core
         /// Gets the data file system
         /// </summary>
         public DataFileSystem DataFileSystem { get; private set; }
+        public DataFileSystem LangFileSystem { get; private set; }
 
         // Various directories
         public string RootDirectory { get; private set; }
@@ -43,6 +44,7 @@ namespace Oxide.Core
         public string PluginDirectory { get; private set; }
         public string ConfigDirectory { get; private set; }
         public string DataDirectory { get; private set; }
+        public string LangDirectory { get; private set; }
         public string LogDirectory { get; private set; }
 
         // Gets the number of seconds since the server started
@@ -111,12 +113,14 @@ namespace Oxide.Core
             ExtensionDirectory = Path.Combine(RootDirectory, rootconfig.ExtensionDirectory);
             PluginDirectory = Path.Combine(InstanceDirectory, rootconfig.PluginDirectory);
             DataDirectory = Path.Combine(InstanceDirectory, rootconfig.DataDirectory);
+            LangDirectory = Path.Combine(InstanceDirectory, rootconfig.LangDirectory);
             LogDirectory = Path.Combine(InstanceDirectory, rootconfig.LogDirectory);
             ConfigDirectory = Path.Combine(InstanceDirectory, rootconfig.ConfigDirectory);
             if (!Directory.Exists(ExtensionDirectory)) throw new Exception("Could not identify extension directory");
             if (!Directory.Exists(InstanceDirectory)) Directory.CreateDirectory(InstanceDirectory);
             if (!Directory.Exists(PluginDirectory)) Directory.CreateDirectory(PluginDirectory);
             if (!Directory.Exists(DataDirectory)) Directory.CreateDirectory(DataDirectory);
+            if (!Directory.Exists(LangDirectory)) Directory.CreateDirectory(LangDirectory);
             if (!Directory.Exists(LogDirectory)) Directory.CreateDirectory(LogDirectory);
             if (!Directory.Exists(ConfigDirectory)) Directory.CreateDirectory(ConfigDirectory);
 
@@ -137,6 +141,7 @@ namespace Oxide.Core
 
             // Initialize other things
             DataFileSystem = new DataFileSystem(DataDirectory);
+            LangFileSystem = new DataFileSystem(LangDirectory);
 
             // Register core libraries
             extensionmanager.RegisterLibrary("Global", new Global());
@@ -145,6 +150,7 @@ namespace Oxide.Core
             extensionmanager.RegisterLibrary("Permission", new Permission());
             extensionmanager.RegisterLibrary("Plugins", new Libraries.Plugins(RootPluginManager));
             extensionmanager.RegisterLibrary("WebRequests", libwebrequests = new WebRequests());
+            extensionmanager.RegisterLibrary("Localization", new Localization());
 
             // Load all extensions
             LogInfo("Loading extensions...");

@@ -27,6 +27,9 @@ namespace Oxide.Rust.Plugins
         private readonly Permission permission = Interface.Oxide.GetLibrary<Permission>();
         private static readonly string[] DefaultGroups = { "player", "moderator", "admin" };
 
+        // The localization lib
+        private readonly Localization localization = Interface.Oxide.GetLibrary<Localization>();
+
         // The command lib
         private readonly Command cmdlib = Interface.Oxide.GetLibrary<Command>();
 
@@ -69,6 +72,8 @@ namespace Oxide.Rust.Plugins
             cmdlib.AddConsoleCommand("oxide.usergroup", this, "cmdUserGroup");
             cmdlib.AddConsoleCommand("oxide.grant", this, "cmdGrant");
             cmdlib.AddConsoleCommand("oxide.revoke", this, "cmdRevoke");
+
+            cmdlib.AddChatCommand("lang", this, "cmdLang");
 
             if (permission.IsLoaded)
             {
@@ -492,6 +497,31 @@ namespace Oxide.Rust.Plugins
                     player = BasePlayer.FindSleeping(id);
             }
             return player;
+        }
+
+        [HookMethod("cmdLang")]
+        private void cmdLang(BasePlayer player, string command, string[] args)
+        {
+            // this function itself should be later done with multilanguage support for ret messages.
+            // probably all others functions in oxide too...
+            var sid = player.userID.ToString();
+            if (args.Length==0)
+            {
+                var langs = localization.GetLanguages();
+                player.ChatMessage(
+                    "By this command you can choose server language.\n"+
+                    "Current language: "+localization.GetLanguage(sid)+"\n"+
+                    "Syntax: /lang <language>\n"+
+                    "Available languages:\n"+
+                    (langs.Count>0?string.Join(", ", langs.ToArray()):"No languages yet.")
+                );
+                return;
+            }
+
+            // SendReply not work here so i use player.ChatMessage
+            var lang = args[0];
+            localization.SetLanguage(sid,lang);
+            player.ChatMessage("Server language succesfully set to \""+lang+"\".");			
         }
 
         /// <summary>
