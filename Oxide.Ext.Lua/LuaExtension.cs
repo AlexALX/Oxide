@@ -411,7 +411,7 @@ end
         public override void OnModLoad()
         {
             // Bind Lua specific libraries
-            LoadLibrary(new LuaGlobal(Manager.Logger), "_G");
+            LoadLibrary(new LuaGlobal(Manager.Logger, LuaEnvironment), "_G");
             LuaEnvironment.NewTable("datafile");
             LoadLibrary(new LuaDatafile(LuaEnvironment), "datafile");
             if (LuaEnvironment["util"] == null)

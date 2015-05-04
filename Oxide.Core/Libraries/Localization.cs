@@ -85,7 +85,7 @@ namespace Oxide.Core.Libraries
                 // init plugin data
                 messages[plugin] = new PluginMessages(){
                     Msgs=msgs,
-                    MainLang=(msgs.Count>0?msgs.Keys.First():defaultlang)
+                    MainLang=defaultlang
                 };
             }
         }
@@ -111,17 +111,20 @@ namespace Oxide.Core.Libraries
         // register all plugin messages with automatically add/remove new/old messages for all translations.
         // also return them back if developer wantuse it by its own way
         [LibraryFunction("RegisterMessages")]
-        public Dictionary<string, Dictionary<string, string>> RegisterMessages(Dictionary<string, Dictionary<string, string>> msgs, Plugin plugin)
+        public Dictionary<string, Dictionary<string, string>> RegisterMessages(Dictionary<string, Dictionary<string, string>> msgs, Plugin plugin, string deflang = null)
         {
             LoadFromDatafile(plugin);
             if (messages.ContainsKey(plugin))
             {
                 var newmessages = msgs;
-                // in case if new messages don't have previous default lang (first one in file)
-                if (!newmessages.ContainsKey(messages[plugin].MainLang)) {
-                    messages[plugin].MainLang = msgs.Keys.First();
-                }
                 var mainlang = messages[plugin].MainLang;
+                if (deflang!=null) mainlang = deflang;
+                if (!newmessages.ContainsKey(mainlang)) {
+                    //messages[plugin].MainLang = msgs.Keys.First();
+                    // hm, now i'll return error.
+                    Interface.Oxide.LogError("Unable to load plugin language data - missing main '"+mainlang+"' language!");
+                    return null;
+                }
                 
                 // add/remove new/old messages in all translations
                 foreach(KeyValuePair<string,Dictionary<string, string>> kvp in messages[plugin].Msgs) {
@@ -155,9 +158,27 @@ namespace Oxide.Core.Libraries
         
         // Manual register if needed, no automatic at all
         [LibraryFunction("Register")]
-        public void Register(Plugin plugin)
+        public void Register(Plugin plugin, string deflang = null)
         {
             LoadFromDatafile(plugin);
+            // maybe with manual register way default language useless
+            if (deflang!=null) SetMainLanguage(deflang, plugin);
+        }
+        
+        [LibraryFunction("SetMainLanguage")]
+        public bool SetMainLanguage(string lang, Plugin plugin)
+        {
+            if (!messages.ContainsKey(plugin)) return false;
+            //if (!messages[plugin].Msgs.ContainsKey(lang)) return false;
+            messages[plugin].MainLang = lang;
+            return true;
+        }
+        
+        [LibraryFunction("GetMainLanguage")]
+        public string GetMainLanguage(Plugin plugin)
+        {
+            if (!messages.ContainsKey(plugin)) return defaultlang;
+            return messages[plugin].MainLang;
         }
 
         #endregion
@@ -198,9 +219,11 @@ namespace Oxide.Core.Libraries
             var lang = GetLanguage(userid);
             // return message if in exists in player language
             if (messages[plugin].Msgs.ContainsKey(lang) && messages[plugin].Msgs[lang].ContainsKey(message)) return messages[plugin].Msgs[lang][message];
-            // return message in main language if doesn't exists in player language
-            // also return message itself if message doesn't exists at all
+            // return message in english language if doesn't exists in player language
+            if (messages[plugin].Msgs.ContainsKey(defaultlang) && messages[plugin].Msgs[defaultlang].ContainsKey(message)) return messages[plugin].Msgs[defaultlang][message];
+            // return message in plugin main language if doesn't exists in english
             return messages[plugin].Msgs?[messages[plugin].MainLang]?[message] ?? message;
+            // also itself if message doesn't exists at all
         }
         
         // Manualy register message, only do this if message already not registered (prevent override if already exists in file)

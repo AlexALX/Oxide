@@ -215,6 +215,7 @@ namespace Oxide.Ext.Python
             var logger = new PythonLogger(Manager.Logger);
             PythonEngine.Runtime.IO.SetOutput(logger, Encoding.Default);
             PythonEngine.Runtime.IO.SetErrorOutput(logger, Encoding.Default);
+            LoadLibrary(new PythonGlobal(), "");
             LoadLibrary(new PythonDatafile(PythonEngine), "data");
             LoadLibrary(new PythonUtil(), "util");
 

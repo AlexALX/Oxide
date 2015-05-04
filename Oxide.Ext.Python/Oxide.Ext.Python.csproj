@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Libraries\PythonDatafile.cs" />
     <Compile Include="Libraries\PythonUtil.cs" />
+    <Compile Include="Libraries\PythonGlobal.cs" />
     <Compile Include="Plugins\PythonPlugin.cs" />
     <Compile Include="Plugins\PythonPluginLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
