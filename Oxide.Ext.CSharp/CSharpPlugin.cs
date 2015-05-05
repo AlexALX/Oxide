@@ -168,6 +168,7 @@ namespace Oxide.Plugins
         public FSWatcher Watcher;
 
         protected Core.Libraries.Plugins plugins = Interface.Oxide.GetLibrary<Core.Libraries.Plugins>("Plugins");
+		protected Core.Libraries.Localization localization = Interface.Oxide.GetLibrary<Core.Libraries.Localization>("Localization");
         protected PluginTimers timer;
 
         protected HashSet<PluginFieldInfo> onlinePlayerFields = new HashSet<PluginFieldInfo>();
