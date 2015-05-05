@@ -29,7 +29,26 @@ namespace Oxide.Rust.Plugins
 
         // The localization lib
         private readonly Localization localization = Interface.Oxide.GetLibrary<Localization>();
-
+        
+        // The localization messages
+        private Dictionary<string, Dictionary<string, string>> Messages = new Dictionary<string, Dictionary<string, string>>{
+            ["en"] = new Dictionary<string, string>{
+                ["LANG.DESC"] = "By this command you can choose server language.",
+                ["LANG.CUR"] = "Current language: {LANG}",
+                ["LANG.SYN"] = "Syntax: /lang <language>",
+                ["LANG.AVA"] = "Available languages:",
+                ["LANG.NO"] = "No languages yet.",
+                ["LANG.SV"] = "Server language succesfully set to \"{LANG}\"."
+            }
+        };
+        // i think here should be only english messages
+        // all other should be in file what will come with oxide package. 
+		// but there is problem - there can be many server identities
+		// this means you can't actually make it so it will come with oxide.
+		// one of possible solutions - create some global file what will come with oxide
+		// and load it first so it will have translations and then save to server identity.
+		// because i don't think that put all translations in .cs file is good idea...
+        
         // The command lib
         private readonly Command cmdlib = Interface.Oxide.GetLibrary<Command>();
 
@@ -60,6 +79,9 @@ namespace Oxide.Rust.Plugins
         [HookMethod("Init")]
         private void Init()
         {
+            // Register localization messages, it will store in rustcore.json file.
+            Messages = localization.RegisterMessages(Messages,this);
+        
             // Add our commands
             cmdlib.AddConsoleCommand("oxide.plugins", this, "cmdPlugins");
             cmdlib.AddConsoleCommand("oxide.load", this, "cmdLoad");
@@ -72,8 +94,10 @@ namespace Oxide.Rust.Plugins
             cmdlib.AddConsoleCommand("oxide.usergroup", this, "cmdUserGroup");
             cmdlib.AddConsoleCommand("oxide.grant", this, "cmdGrant");
             cmdlib.AddConsoleCommand("oxide.revoke", this, "cmdRevoke");
-
-            cmdlib.AddChatCommand("lang", this, "cmdLang");
+            
+            // Reload language command, so no need to restart server for update rustcode.json file.
+            cmdlib.AddConsoleCommand("oxide.langreload", this, "cmdLang");
+            cmdlib.AddChatCommand("lang", this, "chatLang");
 
             if (permission.IsLoaded)
             {
@@ -499,29 +523,39 @@ namespace Oxide.Rust.Plugins
             return player;
         }
 
-        [HookMethod("cmdLang")]
-        private void cmdLang(BasePlayer player, string command, string[] args)
+        [HookMethod("chatLang")]
+        private void chatLang(BasePlayer player, string command, string[] args)
         {
-            // this function itself should be later done with multilanguage support for ret messages.
-            // probably all others functions in oxide too...
+            // all oxide functions probably need to be translated later
             var sid = player.userID.ToString();
+            var plang = localization.GetLanguage(sid,this);
             if (args.Length==0)
             {
                 var langs = localization.GetLanguages();
                 player.ChatMessage(
-                    "By this command you can choose server language.\n"+
-                    "Current language: "+localization.GetLanguage(sid)+"\n"+
-                    "Syntax: /lang <language>\n"+
-                    "Available languages:\n"+
-                    (langs.Count>0?string.Join(", ", langs.ToArray()):"No languages yet.")
+                    Messages[plang]["LANG.DESC"]+"\n"+
+                    Messages[plang]["LANG.CUR"].Replace("{LANG}",localization.GetLanguage(sid))+"\n"+
+                    Messages[plang]["LANG.SYN"]+"\n"+
+                    Messages[plang]["LANG.AVA"]+"\n"+
+                    (langs.Count>0?string.Join(", ", langs.ToArray()):Messages[plang]["LANG.NO"])
                 );
                 return;
             }
 
-            // SendReply not work here so i use player.ChatMessage
             var lang = args[0];
             localization.SetLanguage(sid,lang);
-            player.ChatMessage("Server language succesfully set to \""+lang+"\".");			
+            // update language just after you choosed new
+            plang = localization.GetLanguage(sid,this);
+            player.ChatMessage(Messages[plang]["LANG.SV"].Replace("{LANG}",lang));            
+        }
+        
+        [HookMethod("cmdLang")]
+        private void cmdLang(ConsoleSystem.Arg arg)
+        {
+            if (arg.Player() != null && !arg.Player().IsAdmin()) return;
+            // register messages again - it will act like reload.
+            Messages = localization.RegisterMessages(Messages,this);
+            arg.ReplyWith("Oxide core translations successfully reloaded.");            
         }
 
         /// <summary>

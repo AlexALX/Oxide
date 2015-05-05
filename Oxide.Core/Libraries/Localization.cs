@@ -19,9 +19,7 @@ namespace Oxide.Core.Libraries
     public class PluginMessages
     {
         // this is main language from where all messages should be updated
-        // first language in file is always main
-        // not sure if it works correct, maybe we should do so englisg always main and required?
-        // also in lua tables have no sort so it useless in this case... need to thing
+        // first language is always english, but you can set you own
         public string MainLang { get; set; }
         // messages dictionary, not sure how to do this better
         public Dictionary<string, Dictionary<string, string>> Msgs { get; set; }
@@ -71,8 +69,8 @@ namespace Oxide.Core.Libraries
             Dictionary<string, Dictionary<string, string>> msgs = null;
             try
             {
-                // POSSIBLE BUG: plugin.Name for chsparn plugin is always baseplugin
-                // not sure whats wrong
+                // plugin.Name of chsparn plugin is always baseplugin if call inside constuctor class,
+                // may need to prevent use this function if plugin not loaded yet
                 msgs = Interface.Oxide.LangFileSystem.ReadObject<Dictionary<string, Dictionary<string, string>>>(plugin.Name);
             }
             catch (Exception ex)
@@ -95,7 +93,6 @@ namespace Oxide.Core.Libraries
         public bool SaveMessages(Plugin plugin)
         {
             if (!messages.ContainsKey(plugin)) return false;
-            // BUG: plugin.Name for chsparn plugin is always baseplugin
             Interface.GetMod().LangFileSystem.WriteObject(plugin.Name, messages[plugin].Msgs);
             return true;
         }
@@ -109,7 +106,7 @@ namespace Oxide.Core.Libraries
         #region Library Staff
 
         // register all plugin messages with automatically add/remove new/old messages for all translations.
-        // also return them back if developer wantuse it by its own way
+        // also return them back if developer want use it by its own way
         [LibraryFunction("RegisterMessages")]
         public Dictionary<string, Dictionary<string, string>> RegisterMessages(Dictionary<string, Dictionary<string, string>> msgs, Plugin plugin, string deflang = null)
         {
@@ -163,6 +160,9 @@ namespace Oxide.Core.Libraries
             LoadFromDatafile(plugin);
             // maybe with manual register way default language useless
             if (deflang!=null) SetMainLanguage(deflang, plugin);
+
+            // clean messages on unload
+            plugin.OnRemovedFromManager += owner_OnRemovedFromManager;
         }
         
         [LibraryFunction("SetMainLanguage")]
@@ -255,11 +255,26 @@ namespace Oxide.Core.Libraries
         #region User Stuff
 
         // Return client language (using server data)
+        // optional parameter plugin is needed to get language only what exists in some plugin
+        // if it not set - it will return actual player language
         [LibraryFunction("GetLanguage")]
-        public string GetLanguage(string userid)
+        public string GetLanguage(string userid, Plugin plugin = null)
         {
-            if (userlangs.ContainsKey(userid)) return userlangs[userid];
-            return defaultlang;
+            var userlang = defaultlang;
+            if (userlangs.ContainsKey(userid)) userlang = userlangs[userid];
+            // if plugin is set then check for language
+            if (plugin!=null && messages.ContainsKey(plugin)) {
+                // if plugin don't have player language - return english or main language.
+                if (!messages[plugin].Msgs.ContainsKey(userlang)) {
+                    // if plugin contains english language return it
+                    if (messages[plugin].Msgs.ContainsKey(defaultlang)) return defaultlang;
+                    // if not return main language (if its not english)
+                    return messages[plugin].MainLang;
+                    // we don't need check for main language 
+                    // because translation wont load if main language missing.
+                }
+            }
+            return userlang;
         }
 
         // Set client language, for now just short codes like "en", "de", "ru" etc.
