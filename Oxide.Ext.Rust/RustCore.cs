@@ -2,10 +2,13 @@
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.IO;
+using System;
 
 using Oxide.Core;
 using Oxide.Core.Libraries;
 using Oxide.Core.Plugins;
+using Oxide.Core.Configuration;
 
 using Oxide.Rust.Libraries;
 
@@ -31,6 +34,7 @@ namespace Oxide.Rust.Plugins
         private readonly Localization localization = Interface.Oxide.GetLibrary<Localization>();
         
         // The localization messages
+        // message codes should be changed to more understable for people, its just example
         private Dictionary<string, Dictionary<string, string>> Messages = new Dictionary<string, Dictionary<string, string>>{
             ["en"] = new Dictionary<string, string>{
                 ["LANG.DESC"] = "By this command you can choose server language.",
@@ -43,11 +47,6 @@ namespace Oxide.Rust.Plugins
         };
         // i think here should be only english messages
         // all other should be in file what will come with oxide package. 
-		// but there is problem - there can be many server identities
-		// this means you can't actually make it so it will come with oxide.
-		// one of possible solutions - create some global file what will come with oxide
-		// and load it first so it will have translations and then save to server identity.
-		// because i don't think that put all translations in .cs file is good idea...
         
         // The command lib
         private readonly Command cmdlib = Interface.Oxide.GetLibrary<Command>();
@@ -79,8 +78,39 @@ namespace Oxide.Rust.Plugins
         [HookMethod("Init")]
         private void Init()
         {
+        
+            // read main localization from oxide.lang.json in root directory 
+            /* This code works, but due to restriction in DynamicConfigFile wont load file in root directory
+            So i disabled it for now, i tested it without restriction and it was working fine.
+            var langFile = Path.Combine(Environment.CurrentDirectory, "oxide.lang.json");
+            if (File.Exists(langFile)) {
+                Dictionary<string, Dictionary<string, string>> rootmessages = null;
+                var langConfig = ConfigFile.Load<DynamicConfigFile>(langFile);
+                if (langConfig!=null) {
+                    var newmessages = Messages;
+                    foreach(KeyValuePair<string,object> kvp in langConfig) {
+                        if (kvp.Key=="en") continue; // ignore english, oxide translation file may be always up-to-date
+                        if (kvp.Value is Dictionary<string, object>) {
+                            var tbl = kvp.Value as Dictionary<string, object>;
+                            newmessages[kvp.Key] = new Dictionary<string, string>();
+                            foreach(KeyValuePair<string,object> kvl in tbl) {
+                                // add only exists messages in english translation
+                                if (Messages["en"].ContainsKey(kvl.Key)) {
+                                    newmessages[kvp.Key][kvl.Key] = kvl.Value as string;
+                                }
+                            }
+                        }
+                    }
+                    Messages = newmessages;
+                }
+            }*/
+        
             // Register localization messages, it will store in rustcore.json file.
+            // also all custom changes in rustcore.json will loaded automatically.
             Messages = localization.RegisterMessages(Messages,this);
+            
+            // Right now there is only one problem - how to update already register messages, they will stay same...
+            // Like solution - if message updated set new key name, then it will be added automatically and old message removed.
         
             // Add our commands
             cmdlib.AddConsoleCommand("oxide.plugins", this, "cmdPlugins");
@@ -96,7 +126,9 @@ namespace Oxide.Rust.Plugins
             cmdlib.AddConsoleCommand("oxide.revoke", this, "cmdRevoke");
             
             // Reload language command, so no need to restart server for update rustcode.json file.
+            // later probably will need file watcher for rustcore.json or so (file should be also renamed)
             cmdlib.AddConsoleCommand("oxide.langreload", this, "cmdLang");
+            // chat /lang command
             cmdlib.AddChatCommand("lang", this, "chatLang");
 
             if (permission.IsLoaded)

@@ -50,7 +50,7 @@ namespace Oxide.Core.Configuration
             PluginDirectory = "plugins";
             ConfigDirectory = "config";
             DataDirectory = "data";
-            LangDirectory = "l10n";
+            LangDirectory = "lang";
             LogDirectory = "logs";
         }
 

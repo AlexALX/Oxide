@@ -1,0 +1,18 @@
+{
+  "en": {
+    "LANG.DESC": "By this command you can choose server language.",
+    "LANG.CUR": "Current language: {LANG}",
+    "LANG.SYN": "Syntax: /lang <language>",
+    "LANG.AVA": "Available languages:",
+    "LANG.NO": "No languages yet.",
+    "LANG.SV": "Server language succesfully set to \"{LANG}\"."
+  },
+  "ru": {
+    "LANG.DESC": "Этой командой вы можете выбрать язык на сервере.",
+    "LANG.CUR": "Текущий язык: {LANG}",
+    "LANG.SYN": "Синтаксис: /lang <язык>",
+    "LANG.AVA": "Доступные языки:",
+    "LANG.NO": "Нет доступных языков.",
+    "LANG.SV": "Язык сервера успешно изменён на \"{LANG}\"."
+  }
+}

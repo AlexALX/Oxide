@@ -63,7 +63,7 @@ namespace Oxide.Core.Libraries
             }
         }
         
-        // load language messages from l10n folder for some plugin
+        // load language messages from lang folder for some plugin
         private void LoadFromDatafile(Plugin plugin)
         {
             Dictionary<string, Dictionary<string, string>> msgs = null;
